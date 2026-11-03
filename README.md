@@ -7,137 +7,89 @@
 
 **Catch `.env` drift before it breaks someone's machine or your CI run.**
 
-`envguard` checks a real env file against `.env.example` and flags keys
-that are missing, undeclared, empty, still a placeholder (`changeme`), or
-accidentally duplicated — in under 100 ms, with **zero runtime dependencies**.
-
-```
-$ envguard
-
-✖ Missing (in example, not in env):
-  - STRIPE_SECRET_KEY
-
-⚠ Undeclared (in env, not in example):
-  - OLD_FEATURE_FLAG
-
-⚠ Placeholder-looking values:
-  - DATABASE_URL=your-database-url-here
-```
-
-## Why
-
 Someone adds `STRIPE_SECRET_KEY` to their code and their own `.env`, but
-forgets `.env.example`. A teammate pulls the branch, the app crashes with a
-cryptic runtime error, and they burn twenty minutes figuring out why.
-`envguard` catches that in CI, before it reaches them.
+forgets to add it to `.env.example`. A teammate pulls the branch, the app
+crashes with a cryptic error, and they lose twenty minutes figuring out why.
+`envguard` catches that — and a few other common slip-ups — in one command,
+with **zero runtime dependencies**.
+
+<img src="assets/terminal-screenshot.svg" alt="envguard terminal output showing a missing key, an undeclared key, an empty value, a placeholder value, and a duplicate key" width="640" />
 
 ## Install
 
 ```bash
 npm install --save-dev envguard
-```
-
-Or run it without installing:
-
-```bash
+# or run it without installing
 npx envguard
 ```
 
 ## Usage
 
 ```bash
-envguard                                   # checks .env against .env.example
-envguard --env .env.local --env .env.test  # check several files, one report
-envguard --strict                          # treat warnings as failures too
-envguard --ignore NODE_ENV,CI              # skip specific keys everywhere
-envguard --format json                     # machine-readable output
-envguard init                              # generate .env.example from .env
+envguard                     # check .env against .env.example
+envguard --strict            # treat warnings as failures too
+envguard --ignore NODE_ENV   # skip a key everywhere
+envguard --format json       # machine-readable output
+envguard init                # generate .env.example from .env
 ```
 
-Exit codes: `0` nothing wrong · `1` a problem at error level (fails CI) ·
-`2` usage error (bad flag, missing file).
+Exit codes: `0` all clear · `1` a problem was found (fails CI) · `2` usage error.
 
-### What it checks
+## What it checks
 
-| Check | Default | Meaning |
+| Check | By default | Meaning |
 | --- | --- | --- |
-| `missing` | error | Declared in `.env.example`, absent from the env file |
-| `undeclared` | warning | In the env file, never declared in `.env.example` |
-| `empty` | warning | `KEY=` with no value |
-| `placeholder` | warning | Still looks unfilled — `changeme`, `your_api_key`, `<...>`, `xxxx`, `todo` |
-| `duplicate` | warning | Same key defined twice in one file — the last one silently wins |
+| `missing` | 🔴 error | Declared in `.env.example`, missing from `.env` |
+| `undeclared` | 🟡 warning | Set in `.env`, never declared in `.env.example` |
+| `empty` | 🟡 warning | `KEY=` with no value |
+| `placeholder` | 🟡 warning | Still looks unfilled — `changeme`, `your_api_key`, `<...>` |
+| `duplicate` | 🟡 warning | Same key defined twice — the last one silently wins |
 
-`--strict` turns every warning into an error, so `undeclared` / `empty` /
-`placeholder` / `duplicate` fail the build too.
+`--strict` turns every warning into an error too.
 
-### Config file (optional)
+## Config (optional)
 
-Drop a `.envguardrc.json` in your project root so teammates and CI don't
-need to remember flags:
+Drop a `.envguardrc.json` in your project so the whole team shares the same rules:
 
 ```json
 {
-  "example": ".env.example",
   "env": [".env", ".env.local"],
   "ignore": ["NODE_ENV", "CI"],
-  "severity": { "undeclared": "error", "empty": "off" }
+  "severity": { "undeclared": "error" }
 }
 ```
 
-CLI flags always win over the config file, which wins over the built-in
-defaults. No config file is required — `envguard` works with zero setup.
+No config file needed — envguard works out of the box with zero setup.
 
-### GitHub Actions
-
-```yaml
-- uses: sumitgangwar127/envguard@v1
-  with:
-    env: .env.example   # whatever you commit — see note below
-    strict: "true"
-```
-
-Findings appear as inline `::error` / `::warning` annotations on the PR
-diff. (Never check a real `.env` into CI — run envguard against your
-`.env.example` plus a `.env.ci` built from repository secrets instead.) You
-can also call the CLI directly inside any workflow:
+## In CI
 
 ```yaml
 - run: npx envguard --format github
 ```
 
-### As a library
+Findings show up as inline `::error` / `::warning` annotations right on the
+PR diff. A ready-made [`action.yml`](action.yml) is included too.
+
+## As a library
 
 ```ts
 import { parseEnv, buildReport } from "envguard";
 
-const example = parseEnv(await readFile(".env.example", "utf8"));
-const actual = parseEnv(await readFile(".env", "utf8"));
-
-const report = buildReport(example, actual, { strict: true });
+const report = buildReport(
+  parseEnv(await readFile(".env.example", "utf8")),
+  parseEnv(await readFile(".env", "utf8")),
+);
 console.log(report.ok, report.findings);
 ```
 
-See [DESIGN.md](./DESIGN.md) for the full architecture — `envguard`'s core
-(`parse.ts`, `checks/`, `report.ts`) is pure and has no filesystem or
-`process` dependency, so it's safe to reuse in other tools.
+See [DESIGN.md](DESIGN.md) for the architecture, and
+[examples/sample-project](examples/sample-project) for a working demo.
 
-## Comparison
+---
 
-`envguard` does one thing: keep `.env` and `.env.example` in sync. It does
-not load env vars into `process.env` (use [dotenv](https://www.npmjs.com/package/dotenv)
-for that), scan for leaked secrets (use [gitleaks](https://github.com/gitleaks/gitleaks)),
-or validate value *types* (use [zod](https://www.npmjs.com/package/zod) /
-[envalid](https://www.npmjs.com/package/envalid) for that). It composes
-cleanly with all three.
-
-## Development
-
-```bash
-npm install
-npm run build
-npm test
-```
-
-## License
+envguard does one thing — keep `.env` and `.env.example` in sync. For loading
+values, use [dotenv](https://www.npmjs.com/package/dotenv); for secret
+scanning, [gitleaks](https://github.com/gitleaks/gitleaks); for type
+validation, [zod](https://www.npmjs.com/package/zod). It composes with all three.
 
 MIT © [Sumit Gangwar](https://github.com/sumitgangwar127)

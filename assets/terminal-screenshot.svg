@@ -1,0 +1,53 @@
+<svg width="700" height="440" viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace">
+  <defs>
+    <!-- red "x" badge, used for error-level findings -->
+    <g id="icon-error">
+      <circle r="7" fill="none" stroke="#f85149" stroke-width="1.6" />
+      <path d="M -3 -3 L 3 3 M 3 -3 L -3 3" stroke="#f85149" stroke-width="1.6" stroke-linecap="round" />
+    </g>
+    <!-- yellow warning triangle, used for warning-level findings -->
+    <g id="icon-warn">
+      <path d="M 0 -7.5 L 7 6 L -7 6 Z" fill="none" stroke="#d29922" stroke-width="1.6" stroke-linejoin="round" />
+      <line x1="0" y1="-2.2" x2="0" y2="1.6" stroke="#d29922" stroke-width="1.6" stroke-linecap="round" />
+      <circle cx="0" cy="4" r="0.9" fill="#d29922" />
+    </g>
+  </defs>
+
+  <!-- window -->
+  <rect x="0" y="0" width="700" height="440" rx="10" fill="#0d1117" />
+
+  <!-- title bar -->
+  <rect x="0" y="0" width="700" height="36" rx="10" fill="#161b22" />
+  <rect x="0" y="26" width="700" height="10" fill="#161b22" />
+  <circle cx="22" cy="18" r="6" fill="#ff5f56" />
+  <circle cx="44" cy="18" r="6" fill="#ffbd2e" />
+  <circle cx="66" cy="18" r="6" fill="#27c93f" />
+  <text x="350" y="23" text-anchor="middle" fill="#8b949e" font-size="12">envguard</text>
+
+  <!-- body -->
+  <g font-size="14.5" fill="#c9d1d9">
+    <text x="24" y="66"><tspan fill="#3fb950">$</tspan> envguard</text>
+
+    <use href="#icon-error" x="31" y="99" />
+    <text x="44" y="104" fill="#f85149">Missing (in example, not in env):</text>
+    <text x="24" y="126" fill="#f85149">  - STRIPE_SECRET_KEY</text>
+
+    <use href="#icon-warn" x="31" y="159" />
+    <text x="44" y="164" fill="#d29922">Undeclared (in env, not in example):</text>
+    <text x="24" y="186" fill="#d29922">  - OLD_FEATURE_FLAG</text>
+
+    <use href="#icon-warn" x="31" y="219" />
+    <text x="44" y="224" fill="#d29922">Empty values:</text>
+    <text x="24" y="246" fill="#d29922">  - SESSION_SECRET</text>
+
+    <use href="#icon-warn" x="31" y="279" />
+    <text x="44" y="284" fill="#d29922">Placeholder-looking values:</text>
+    <text x="24" y="306" fill="#d29922">  - DATABASE_URL=your-database-url-here</text>
+
+    <use href="#icon-warn" x="31" y="339" />
+    <text x="44" y="344" fill="#d29922">Duplicate keys:</text>
+    <text x="24" y="366" fill="#d29922">  - PORT</text>
+
+    <text x="24" y="404" fill="#8b949e">exit code 1 — fails CI</text>
+  </g>
+</svg>
