@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { parseEnv } from "./parse.js";
 import { buildReport } from "./report.js";
 import { formatText, formatJson, formatGithub } from "./reporters/index.js";
@@ -242,9 +243,25 @@ export function main(argv: string[] = process.argv.slice(2)): void {
   if (!report.ok) process.exitCode = 1;
 }
 
-const isDirectRun =
-  process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`;
+/**
+ * True when this module was run directly (`node cli.js` / the installed
+ * `envguard` bin), as opposed to merely imported (e.g. by the test suite).
+ * `process.argv[1]` is resolved with realpathSync before comparing, because
+ * npm installs the bin as a symlink (`node_modules/.bin/envguard`) — Node
+ * resolves that symlink when computing `import.meta.url` but leaves
+ * `process.argv[1]` as the symlink path, so a naive string comparison
+ * never matches and the CLI would silently do nothing when run the exact
+ * way a real install invokes it (`npx envguard`, or the bin directly).
+ */
+function isDirectRun(): boolean {
+  if (process.argv[1] === undefined) return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
 
-if (isDirectRun) {
+if (isDirectRun()) {
   main();
 }

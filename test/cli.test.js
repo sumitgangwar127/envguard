@@ -1,7 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -134,6 +141,24 @@ test("an unknown flag exits 2 with a usage error", () => {
     const result = runCli(["--nope"], { cwd: dir });
     assert.equal(result.status, 2);
     assert.match(result.stderr, /Unknown flag/);
+  });
+});
+
+test("still runs when invoked through a symlink, as npm's bin shim does", () => {
+  // Regression test: npm installs the `envguard` command as a symlink at
+  // node_modules/.bin/envguard -> ../envguard/dist/cli.js. Node resolves
+  // that symlink when computing import.meta.url but leaves process.argv[1]
+  // as the symlink path, so a naive `import.meta.url === argv[1]` check
+  // never matches and main() silently never runs for real installs.
+  withTempDir({ ".env.example": "FOO=", ".env": "FOO=1" }, (dir) => {
+    const linkPath = join(dir, "envguard-link.js");
+    symlinkSync(CLI_PATH, linkPath);
+    const result = spawnSync(process.execPath, [linkPath, "--version"], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0);
+    assert.match(result.stdout.trim(), /^\d+\.\d+\.\d+$/);
   });
 });
 

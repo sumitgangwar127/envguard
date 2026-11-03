@@ -1,0 +1,15 @@
+{
+  "name": "acme-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A small sample app used to demo envguard — not a real product.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check-env": "envguard"
+  },
+  "devDependencies": {
+    "envguard": "file:../../envguard-0.1.0.tgz"
+  }
+}
