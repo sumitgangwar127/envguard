@@ -1,0 +1,54 @@
+{
+  "name": "envguard",
+  "version": "0.1.0",
+  "description": "Keep .env and .env.example in sync — catch missing, unused and empty environment variables before they break your build.",
+  "type": "module",
+  "bin": {
+    "envguard": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "node --test --experimental-test-coverage test/*.test.js",
+    "pretest": "npm run build",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "env",
+    "dotenv",
+    "cli",
+    "ci",
+    "environment-variables",
+    "devtools",
+    "developer-tools"
+  ],
+  "author": "Sumit Gangwar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sumitgangwar127/envguard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sumitgangwar127/envguard/issues"
+  },
+  "homepage": "https://github.com/sumitgangwar127/envguard#readme",
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.1"
+  }
+}

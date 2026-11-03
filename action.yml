@@ -1,0 +1,47 @@
+name: "envguard"
+description: "Check that .env and .env.example are in sync, with inline PR annotations."
+author: "Sumit Gangwar"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  env:
+    description: "Path to the env file to check."
+    required: false
+    default: ".env"
+  example:
+    description: "Path to the example env file."
+    required: false
+    default: ".env.example"
+  ignore:
+    description: "Comma-separated keys to skip."
+    required: false
+    default: ""
+  strict:
+    description: "Treat every warning as an error."
+    required: false
+    default: "false"
+  version:
+    description: "envguard version to install (passed to `npm install -g envguard@<version>`)."
+    required: false
+    default: "latest"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install envguard
+      shell: bash
+      run: npm install -g envguard@${{ inputs.version }}
+
+    - name: Run envguard
+      shell: bash
+      run: |
+        args=(--env "${{ inputs.env }}" --example "${{ inputs.example }}" --format github)
+        if [ -n "${{ inputs.ignore }}" ]; then
+          args+=(--ignore "${{ inputs.ignore }}")
+        fi
+        if [ "${{ inputs.strict }}" = "true" ]; then
+          args+=(--strict)
+        fi
+        envguard "${args[@]}"
