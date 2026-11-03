@@ -1,0 +1,358 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>envguard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  /* layout: a unified diff, not a landing page &mdash; the tool's own output format
+     (---/+++/@@, red removed / green added) is the page's entire visual system.
+     one font, one weight range, no decorative icons. */
+  :root{
+    --bg:#fbfbfa; --surface:#ffffff; --border:#dcdad4; --fg:#16140f; --muted:#6b6962;
+    --add-bg:#dafbe1; --add-fg:#116329; --add-border:#9fd8ae;
+    --del-bg:#ffebe9; --del-fg:#82071e; --del-border:#f3b4ae;
+    --link:#0969da; --link-fg:#ffffff;
+    --font:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a0c10; --surface:#0d1117; --border:#262b33; --fg:#e6edf3; --muted:#848d97;
+      --add-bg:rgba(46,160,67,.15); --add-fg:#3fb950; --add-border:rgba(46,160,67,.4);
+      --del-bg:rgba(248,81,73,.15); --del-fg:#f85149; --del-border:rgba(248,81,73,.4);
+      --link:#4493f8; --link-fg:#0a0c10;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0c10; --surface:#0d1117; --border:#262b33; --fg:#e6edf3; --muted:#848d97;
+    --add-bg:rgba(46,160,67,.15); --add-fg:#3fb950; --add-border:rgba(46,160,67,.4);
+    --del-bg:rgba(248,81,73,.15); --del-fg:#f85149; --del-border:rgba(248,81,73,.4);
+    --link:#4493f8; --link-fg:#0a0c10;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--fg); font-family:var(--font); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:var(--font); font-weight:700; margin:0;}
+  p{margin:0;}
+  a{color:var(--link);}
+  ::selection{background:var(--fg); color:var(--bg);}
+
+  .wrap{max-width:780px; margin-inline:auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));}
+  section{padding-block:clamp(40px,7vw,64px); border-bottom:1px solid var(--border);}
+  section:last-of-type{border-bottom:none;}
+
+  /* ---------- header ---------- */
+  header{position:sticky; top:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); border-bottom:1px solid var(--border);}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:11;background:var(--bg);}
+  .nav{display:flex; align-items:center; justify-content:space-between; gap:14px; padding-block:13px; font-size:13.5px;}
+  .brand{font-weight:700; letter-spacing:-.01em;}
+  .navlinks{display:flex; gap:18px;}
+  .navlinks a{color:var(--muted); text-decoration:none;}
+  .navlinks a:hover{color:var(--fg);}
+  @media (max-width:560px){ .navlinks a:not(:last-child){display:none;} }
+
+  /* ---------- diff block (the core visual unit, used throughout) ---------- */
+  .diff{background:var(--surface); border:1px solid var(--border); border-radius:6px; overflow:hidden; font-size:13.5px;}
+  .diff-head{padding:8px 14px; border-bottom:1px solid var(--border); color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:10px;}
+  .diff-head button{font-family:var(--font); font-size:11.5px; background:none; border:1px solid var(--border); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer;}
+  .diff-head button:hover{color:var(--fg); border-color:var(--fg);}
+  .diff-body{overflow-x:auto;}
+  .dline{display:flex; white-space:pre; min-width:max-content;}
+  .dline .gut{width:1.6em; flex-shrink:0; text-align:center; -webkit-user-select:none; user-select:none; color:var(--muted);}
+  .dline .txt{padding-right:14px; flex:1;}
+  .dline.add{background:var(--add-bg); color:var(--add-fg);}
+  .dline.del{background:var(--del-bg); color:var(--del-fg);}
+  .dline.ctx{color:var(--fg);}
+  .dline.hunk{color:var(--link); background:color-mix(in srgb, var(--link) 8%, transparent);}
+  .dline.meta{color:var(--muted);}
+
+  /* ---------- hero ---------- */
+  .hero{padding-top:clamp(44px,8vw,72px);}
+  .hero h1{font-size:clamp(22px,3.2vw,28px); line-height:1.3;}
+  .hero .tag{color:var(--muted); margin-top:6px; font-size:14.5px;}
+  .install-line{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .btn{font-family:var(--font); font-size:13.5px; font-weight:600; padding:8px 14px; border-radius:5px; border:1px solid var(--border); background:var(--surface); color:var(--fg); text-decoration:none; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+  .btn:hover{border-color:var(--fg);}
+  .btn.primary{background:var(--fg); color:var(--bg); border-color:var(--fg);}
+  .btn.primary:hover{opacity:.85;}
+  .hero .diff{margin-top:24px;}
+
+  /* ---------- section labels ---------- */
+  .lbl{color:var(--muted); font-size:12px; margin-bottom:10px;}
+  .lbl::before{content:"## ";}
+  h2{font-size:18px; margin-bottom:4px;}
+  .sub{color:var(--muted); font-size:13.5px; margin-bottom:18px;}
+
+  /* ---------- checks table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--muted); font-weight:500; font-size:11.5px; text-transform:lowercase; padding:6px 10px; border-bottom:1px solid var(--border);}
+  td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .rule{font-weight:600;}
+  .sev{font-size:11px; padding:1px 6px; border-radius:4px; white-space:nowrap;}
+  .sev.error{color:var(--del-fg); background:var(--del-bg); border:1px solid var(--del-border);}
+  .sev.warn{color:var(--muted); border:1px solid var(--border);}
+  .desc{color:var(--muted);}
+  .table-wrap{overflow-x:auto;}
+  @media (max-width:520px){ table{font-size:12px;} td,th{padding:8px 6px;} }
+
+  /* ---------- playground ---------- */
+  .pg-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px;}
+  @media (max-width:700px){ .pg-grid{grid-template-columns:1fr;} }
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
+  textarea{width:100%; min-height:150px; resize:vertical; font-family:var(--font); font-size:13px; line-height:1.6; background:var(--surface); color:var(--fg); border:1px solid var(--border); border-radius:6px; padding:11px 12px;}
+  textarea:focus{outline:2px solid var(--link); outline-offset:1px;}
+  .pg-controls{display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-top:14px; font-size:13px; color:var(--muted);}
+  .pg-controls label{display:flex; align-items:center; gap:6px;}
+  .pg-controls input[type="checkbox"]{accent-color:var(--fg); width:14px; height:14px;}
+  .pg-controls input[type="text"]{font-family:var(--font); font-size:12.5px; background:var(--surface); color:var(--fg); border:1px solid var(--border); border-radius:4px; padding:5px 8px; width:150px;}
+  .pg-out{margin-top:14px;}
+  .pg-exit{margin-top:10px; font-size:12.5px; color:var(--muted);}
+  .pg-exit b{color:var(--fg);}
+
+  footer{padding-block:22px; font-size:12.5px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+  footer a{color:var(--muted); text-decoration:none;}
+  footer a:hover{color:var(--fg);}
+</style>
+
+<header>
+  <div class="wrap nav">
+    <span class="brand">envguard</span>
+    <nav class="navlinks">
+      <a href="#checks">checks</a>
+      <a href="#playground">playground</a>
+      <a href="#install">install</a>
+      <a href="https://github.com/sumitgangwar127/envguard" target="_blank" rel="noopener">github</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <h1>.env and .env.example drift. envguard catches it.</h1>
+      <p class="tag">a diff for your environment variables &mdash; missing, undeclared, empty, placeholder, duplicate.</p>
+
+      <div class="install-line">
+        <a class="btn primary" href="#playground">try it live &rarr;</a>
+        <a class="btn" href="#install">npm install --save-dev envguard</a>
+      </div>
+
+      <div class="diff">
+        <div class="diff-head"><span>.env.example &harr; .env</span><span>exit 1</span></div>
+        <div class="diff-body">
+          <div class="dline hunk"><span class="gut"></span><span class="txt">@@ missing @@</span></div>
+          <div class="dline del"><span class="gut">-</span><span class="txt">STRIPE_SECRET_KEY</span></div>
+          <div class="dline hunk"><span class="gut"></span><span class="txt">@@ placeholder @@</span></div>
+          <div class="dline del"><span class="gut">-</span><span class="txt">DATABASE_URL=your-database-url-here</span></div>
+          <div class="dline ctx"><span class="gut"> </span><span class="txt">PORT=4000</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="checks">
+    <div class="wrap">
+      <div class="lbl">checks</div>
+      <h2>Five rules, each a real mistake</h2>
+      <p class="sub">Severity is configurable per rule in <code>.envguardrc.json</code>; <code>--strict</code> makes every warning an error.</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>rule</th><th>default</th><th>catches</th></tr>
+          <tr><td><span class="rule">missing</span></td><td><span class="sev error">error</span></td><td class="desc">declared in .env.example, absent from .env</td></tr>
+          <tr><td><span class="rule">undeclared</span></td><td><span class="sev warn">warn</span></td><td class="desc">set in .env, never declared in .env.example</td></tr>
+          <tr><td><span class="rule">empty</span></td><td><span class="sev warn">warn</span></td><td class="desc"><code>KEY=</code> with no value</td></tr>
+          <tr><td><span class="rule">placeholder</span></td><td><span class="sev warn">warn</span></td><td class="desc">still looks like <code>changeme</code>, <code>your_api_key</code>, <code>&lt;...&gt;</code></td></tr>
+          <tr><td><span class="rule">duplicate</span></td><td><span class="sev warn">warn</span></td><td class="desc">defined twice &mdash; the second silently wins</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="playground">
+    <div class="wrap">
+      <div class="lbl">playground</div>
+      <h2>Edit the files, run the real checker</h2>
+      <p class="sub">envguard's actual parse/check logic, ported to run in your browser. Nothing leaves the page.</p>
+
+      <div class="pg-grid">
+        <div class="field">
+          <label>.env.example</label>
+          <textarea id="pg-example" spellcheck="false"></textarea>
+        </div>
+        <div class="field">
+          <label>.env</label>
+          <textarea id="pg-env" spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <div class="pg-controls">
+        <label><input type="checkbox" id="pg-strict">--strict</label>
+        <label>--ignore <input type="text" id="pg-ignore" placeholder="KEY1,KEY2"></label>
+      </div>
+
+      <div class="pg-out">
+        <div class="diff">
+          <div class="diff-head"><span>output</span><span id="pg-cmd">$ envguard</span></div>
+          <div class="diff-body" id="pg-output"></div>
+        </div>
+        <p class="pg-exit">exit code <b id="pg-exit-code">0</b> &middot; <span id="pg-summary"></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="lbl">install</div>
+      <h2>Zero config to start</h2>
+      <div class="diff">
+        <div class="diff-head"><span>terminal</span><button class="copy-btn" data-copy="npm install --save-dev envguard">copy</button></div>
+        <div class="diff-body">
+          <div class="dline meta"><span class="gut"></span><span class="txt"># add it to your project</span></div>
+          <div class="dline ctx"><span class="gut"></span><span class="txt">npm install --save-dev envguard</span></div>
+          <div class="dline meta"><span class="gut"></span><span class="txt">&nbsp;</span></div>
+          <div class="dline meta"><span class="gut"></span><span class="txt"># or run it without installing</span></div>
+          <div class="dline ctx"><span class="gut"></span><span class="txt">npx envguard</span></div>
+        </div>
+      </div>
+
+      <div class="diff" style="margin-top:12px;">
+        <div class="diff-head"><span>.github/workflows/ci.yml</span><button class="copy-btn" data-copy="- run: npx envguard --format github --strict">copy</button></div>
+        <div class="diff-body">
+          <div class="dline ctx"><span class="gut"></span><span class="txt">- run: npx envguard --format github --strict</span></div>
+        </div>
+      </div>
+
+      <div class="diff" style="margin-top:12px;">
+        <div class="diff-head"><span>.envguardrc.json</span><button class="copy-btn" data-copy='{
+  "ignore": ["NODE_ENV", "CI"],
+  "severity": { "undeclared": "error" }
+}'>copy</button></div>
+        <div class="diff-body">
+          <div class="dline ctx"><span class="gut"></span><span class="txt">{</span></div>
+          <div class="dline ctx"><span class="gut"></span><span class="txt">  "ignore": ["NODE_ENV", "CI"],</span></div>
+          <div class="dline ctx"><span class="gut"></span><span class="txt">  "severity": { "undeclared": "error" }</span></div>
+          <div class="dline ctx"><span class="gut"></span><span class="txt">}</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>MIT &copy; Sumit Gangwar</span>
+  <span><a href="https://github.com/sumitgangwar127/envguard" target="_blank" rel="noopener">github</a> &middot; <a href="https://github.com/sumitgangwar127/envguard/blob/main/DESIGN.md" target="_blank" rel="noopener">design doc</a> &middot; <a href="https://www.npmjs.com/package/envguard" target="_blank" rel="noopener">npm</a></span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const LINE_RE = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/;
+  function unquote(v){ if(v.length>=2){const f=v[0],l=v[v.length-1]; if((f==='"'&&l==='"')||(f==="'"&&l==="'")){const i=v.slice(1,-1); return f==='"'?i.replace(/\\n/g,"\n").replace(/\\"/g,'"'):i;}} return v; }
+  function stripInline(v){ const t=v.trim(); if(t.startsWith('"')||t.startsWith("'")){const q=t[0]; const c=t.indexOf(q,1); return c!==-1?t.slice(0,c+1):t;} const h=t.indexOf("#"); return h===-1?t:t.slice(0,h).trim(); }
+
+  function parseEnv(source){
+    const entries=new Map(), order=[], lineNumbers=new Map();
+    const lines=source.split(/\r\n|\n|\r/);
+    for(let i=0;i<lines.length;i++){
+      const raw=lines[i]||""; const line=raw.trim();
+      if(line===""||line.startsWith("#")) continue;
+      const m=LINE_RE.exec(raw); if(!m) continue;
+      const key=m[1]; let value=m[2]||""; value=unquote(stripInline(value));
+      if(!entries.has(key)) order.push(key);
+      entries.set(key,{key,value,line:i+1});
+      const seen=lineNumbers.get(key); if(seen) seen.push(i+1); else lineNumbers.set(key,[i+1]);
+    }
+    const duplicates=new Map();
+    for(const [k,l] of lineNumbers) if(l.length>1) duplicates.set(k,l);
+    return {entries,order,duplicates};
+  }
+
+  const PLACEHOLDER_PATTERNS=[/^(change.?me|changeme)$/i,/^your[-_].*$/i,/^<.*>$/,/^x{4,}$/i,/^(todo|tbd|fixme)$/i,/^replace.?me$/i];
+  const DEFAULT_SEVERITY={missing:"error",undeclared:"warn",empty:"warn",placeholder:"warn",duplicate:"warn"};
+
+  const CHECKS={
+    missing(ex,ac,ctx){ const out=[]; for(const k of ex.order){ if(ctx.ignore.has(k))continue; if(!ac.entries.has(k)) out.push({rule:"missing",key:k,line:ex.entries.get(k).line}); } return out; },
+    undeclared(ex,ac,ctx){ const out=[]; for(const k of ac.order){ if(ctx.ignore.has(k))continue; if(!ex.entries.has(k)) out.push({rule:"undeclared",key:k,line:ac.entries.get(k).line}); } return out; },
+    empty(ex,ac,ctx){ const out=[]; for(const k of ac.order){ if(ctx.ignore.has(k))continue; const e=ac.entries.get(k); if(e.value==="") out.push({rule:"empty",key:k,line:e.line}); } return out; },
+    placeholder(ex,ac,ctx){ const out=[]; for(const k of ac.order){ if(ctx.ignore.has(k))continue; const e=ac.entries.get(k); if(e.value==="")continue; if(ctx.placeholderPatterns.some(re=>re.test(e.value))) out.push({rule:"placeholder",key:k,value:e.value,line:e.line}); } return out; },
+    duplicate(ex,ac,ctx){ const out=[]; for(const [k,lines] of ac.duplicates){ if(ctx.ignore.has(k))continue; out.push({rule:"duplicate",key:k,lines,line:lines[lines.length-1]}); } return out; },
+  };
+
+  function buildReport(example,actual,options){
+    options=options||{};
+    const ignore=new Set(options.ignore||[]); const strict=!!options.strict;
+    const ctx={ignore,placeholderPatterns:PLACEHOLDER_PATTERNS};
+    const findings=[]; const summary={missing:0,undeclared:0,empty:0,placeholder:0,duplicate:0};
+    for(const rule of Object.keys(CHECKS)){
+      let severity=DEFAULT_SEVERITY[rule]; if(severity==="warn"&&strict) severity="error";
+      for(const item of CHECKS[rule](example,actual,ctx)){ findings.push(Object.assign({},item,{severity})); summary[rule]++; }
+    }
+    const ok=findings.every(f=>f.severity!=="error");
+    return {findings,ok,summary};
+  }
+
+  function el(tag,cls,html){ const n=document.createElement(tag); if(cls)n.className=cls; if(html!=null)n.innerHTML=html; return n; }
+  function esc(s){ return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function dline(cls,gutter,text){ return el("div","dline "+cls,'<span class="gut">'+esc(gutter)+'</span><span class="txt">'+text+'</span>'); }
+
+  function render(){
+    const exampleSrc=document.getElementById("pg-example").value;
+    const envSrc=document.getElementById("pg-env").value;
+    const strict=document.getElementById("pg-strict").checked;
+    const ignore=document.getElementById("pg-ignore").value.split(",").map(s=>s.trim()).filter(Boolean);
+
+    const example=parseEnv(exampleSrc), actual=parseEnv(envSrc);
+    const report=buildReport(example,actual,{strict,ignore});
+
+    document.getElementById("pg-cmd").textContent="$ envguard"+(strict?" --strict":"")+(ignore.length?" --ignore "+ignore.join(","):"");
+
+    const out=document.getElementById("pg-output");
+    out.innerHTML="";
+
+    if(report.findings.length===0){
+      out.appendChild(dline("ctx"," ",esc(envSrc.trim()?".env matches .env.example":"fill in both files above")));
+    } else {
+      const byRule={};
+      for(const f of report.findings){ (byRule[f.rule]=byRule[f.rule]||[]).push(f); }
+      const order=["missing","undeclared","empty","placeholder","duplicate"];
+      let first=true;
+      for(const rule of order){
+        const items=byRule[rule]; if(!items||!items.length) continue;
+        if(!first) out.appendChild(dline("meta",""," "));
+        first=false;
+        out.appendChild(dline("hunk","","@@ "+rule+" ("+items[0].severity+") @@"));
+        for(const f of items){
+          const cls=f.severity==="error"?"del":"del";
+          const suffix=f.value!==undefined?"="+f.value:(f.lines?" (lines "+f.lines.join(", ")+")":"");
+          out.appendChild(dline(cls,"-",esc(f.key+suffix)));
+        }
+      }
+    }
+
+    const exitCode=report.ok?0:1;
+    document.getElementById("pg-exit-code").textContent=exitCode;
+    const parts=[];
+    for(const rule of ["missing","undeclared","empty","placeholder","duplicate"]){ if(report.summary[rule]) parts.push(report.summary[rule]+" "+rule); }
+    document.getElementById("pg-summary").textContent=parts.join(", ")||"no findings";
+  }
+
+  document.getElementById("pg-example").value="DATABASE_URL=\nSTRIPE_SECRET_KEY=\nSESSION_SECRET=\nPORT=\n";
+  document.getElementById("pg-env").value="DATABASE_URL=your-database-url-here\nSESSION_SECRET=\nPORT=4000\nPORT=5000\nOLD_FEATURE_FLAG=true\n";
+
+  ["pg-example","pg-env","pg-strict","pg-ignore"].forEach(id=>{
+    document.getElementById(id).addEventListener("input",render);
+    document.getElementById(id).addEventListener("change",render);
+  });
+  render();
+
+  document.querySelectorAll(".copy-btn").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const text=btn.getAttribute("data-copy"); const original=btn.textContent;
+      try{ await navigator.clipboard.writeText(text); }
+      catch(e){ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e2){} document.body.removeChild(ta); }
+      btn.textContent="copied"; setTimeout(()=>{btn.textContent=original;},1400);
+    });
+  });
+})();
+</script>
