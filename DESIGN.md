@@ -9,7 +9,7 @@ but forgets to add to `.env.example` (or vice versa).
 1. Detect drift between `.env.example` (the contract) and real env files.
 2. Run in well under 100 ms, with **zero runtime dependencies**.
 3. Be CI-first: clear exit codes, JSON output, GitHub Action annotations.
-4. Be usable both as a CLI and as a library (`import { buildReport } from "envguard"`).
+4. Be usable both as a CLI and as a library (`import { buildReport } from "@sumitgangwar127/envguard"`).
 
 **Non-goals (v1):** loading env values into `process.env` (that's dotenv's
 job), secret scanning, or value-level type validation (URL, number, etc.).
@@ -119,7 +119,7 @@ always works — `config.ts`'s `loadConfig()` returns `{}` when no
 - **GitHub Action**: `envguard --format github` prints `::error`/`::warning`
   workflow commands, so findings show up as inline PR annotations.
 - **Pre-commit / husky**: `envguard --strict` as a commit hook.
-- **Library**: `import { buildReport, parseEnv } from "envguard"`.
+- **Library**: `import { buildReport, parseEnv } from "@sumitgangwar127/envguard"`.
 
 ## Roadmap
 

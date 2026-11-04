@@ -23,7 +23,7 @@ inputs:
     required: false
     default: "false"
   version:
-    description: "envguard version to install (passed to `npm install -g envguard@<version>`)."
+    description: "envguard version to install (passed to `npm install -g @sumitgangwar127/envguard@<version>`)."
     required: false
     default: "latest"
 
@@ -32,7 +32,7 @@ runs:
   steps:
     - name: Install envguard
       shell: bash
-      run: npm install -g envguard@${{ inputs.version }}
+      run: npm install -g @sumitgangwar127/envguard@${{ inputs.version }}
 
     - name: Run envguard
       shell: bash

@@ -1,5 +1,5 @@
 {
-  "name": "envguard",
+  "name": "@sumitgangwar127/envguard",
   "version": "0.1.0",
   "description": "Keep .env and .env.example in sync — catch missing, unused and empty environment variables before they break your build.",
   "type": "module",

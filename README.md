@@ -1,9 +1,9 @@
 # envguard
 
-[![npm version](https://img.shields.io/npm/v/envguard?color=CB3837&logo=npm)](https://www.npmjs.com/package/envguard)
+[![npm version](https://img.shields.io/npm/v/%40sumitgangwar127%2Fenvguard?color=CB3837&logo=npm)](https://www.npmjs.com/package/@sumitgangwar127/envguard)
 [![CI](https://github.com/sumitgangwar127/envguard/actions/workflows/ci.yml/badge.svg)](https://github.com/sumitgangwar127/envguard/actions/workflows/ci.yml)
 [![zero dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](package.json)
-[![license: MIT](https://img.shields.io/npm/l/envguard)](LICENSE)
+[![license: MIT](https://img.shields.io/npm/l/%40sumitgangwar127%2Fenvguard)](LICENSE)
 
 **Catch `.env` drift before it breaks someone's machine or your CI run.**
 
@@ -18,10 +18,14 @@ with **zero runtime dependencies**.
 ## Install
 
 ```bash
-npm install --save-dev envguard
+npm install --save-dev @sumitgangwar127/envguard
 # or run it without installing
-npx envguard
+npx @sumitgangwar127/envguard
 ```
+
+The published package is scoped (`@sumitgangwar127/envguard`) — npm rejected the
+plain name as too close to an existing package. The command itself is still
+just `envguard` once installed, or via `npx envguard` after install.
 
 ## Usage
 
@@ -64,7 +68,7 @@ No config file needed — envguard works out of the box with zero setup.
 ## In CI
 
 ```yaml
-- run: npx envguard --format github
+- run: npx @sumitgangwar127/envguard --format github
 ```
 
 Findings show up as inline `::error` / `::warning` annotations right on the
@@ -73,7 +77,7 @@ PR diff. A ready-made [`action.yml`](action.yml) is included too.
 ## As a library
 
 ```ts
-import { parseEnv, buildReport } from "envguard";
+import { parseEnv, buildReport } from "@sumitgangwar127/envguard";
 
 const report = buildReport(
   parseEnv(await readFile(".env.example", "utf8")),
